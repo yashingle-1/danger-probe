@@ -1,0 +1,55 @@
+# danger-probe — single source of truth for model, layers, pooling, thresholds.
+# Switch `active` between "primary" (university GPU) and "smoke" (local CPU, GPT-2).
+
+active: smoke   # primary | smoke
+
+model:
+  primary:
+    name: meta-llama/Llama-3.1-8B-Instruct   # gated HF model — request access + huggingface-cli login
+    device: cuda
+    dtype: bfloat16
+    layers: [10, 16, 22, 28]                 # 32-layer model; mid-network probes
+    use_chat_template: true
+  smoke:
+    name: gpt2                               # tiny, CPU-friendly; verifies pipeline only
+    device: cpu
+    dtype: float32
+    layers: [4, 7, 10, 11]                   # 12-layer model
+    use_chat_template: false
+
+pooling:
+  methods: [last, mean]   # extract + train both, compare which probes better
+
+probe:
+  type: logistic          # logistic | mlp
+  C: 1.0
+  max_iter: 2000
+  standardize: true
+
+thresholds:
+  safe: 0.3               # P(dangerous) < safe  -> SAFE
+  block: 0.7              # P(dangerous) > block -> BLOCK ; between -> WARN
+
+dataset:
+  out_path: data/probe_dataset.jsonl
+  target_size: 2000
+  balance: true                 # ~50/50 dangerous/benign
+  dedup_threshold: 0.90         # drop pairs with tfidf cosine > this
+  threat_categories: [jailbreak, harmful_instruction, manipulation]
+  sources:
+    dangerous: [harmbench, advbench]
+    benign: [alpaca]
+  max_chars: 2000               # truncate very long prompts before extraction
+
+split:
+  mode: random                  # random | leave_one_category_out
+  test_frac: 0.2
+  holdout_category: manipulation   # used only when mode == leave_one_category_out
+
+paths:
+  activations_dir: data/activations
+  models_dir: models
+  audit_dir: audit
+  figures_dir: notebooks/figures
+
+seed: 42

@@ -1,0 +1,17 @@
+# Core probe pipeline (CPU-runnable: dataset, dedup, train, eval, viz)
+numpy>=1.26
+scikit-learn>=1.4
+pandas>=2.1
+pyyaml>=6.0
+matplotlib>=3.9          # 3.8 crashes on Python 3.14 (Path deepcopy recursion)
+datasets>=2.18          # pull HarmBench / AdvBench / Alpaca from HF Hub
+
+# Model + activation extraction (GPU box). torch/transformer_lens have NO
+# wheels for Python 3.14 yet — use a 3.11 or 3.12 venv on the GPU machine.
+torch>=2.2              # install the CUDA build that matches your driver
+transformer_lens>=2.0
+transformers>=4.43
+accelerate>=0.30
+
+# Optional, better dedup than the TF-IDF fallback (also needs torch)
+# sentence-transformers>=2.7
